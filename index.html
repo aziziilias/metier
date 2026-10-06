@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Les métiers du marketing — le marché, lu dans les offres</title>
+<title>Chargé de marketing digital — le marché, lu dans les offres</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.min.css">
@@ -14,7 +14,7 @@
 <body>
 <main>
   <div id="nav-ici"></div>
-  <h1>Les métiers du marketing — le marché, lu dans les offres</h1>
+  <h1>Chargé de marketing digital — le marché, lu dans les offres</h1>
   <p class="sous" id="sous">Chargement des données…</p>
 
   <!-- ============ 1. FILTRES (posés par commun.js) ============ -->
@@ -34,29 +34,28 @@
       <button data-vue="paris">Île-de-France</button>
       <button data-fond="gris" class="actif">Fond gris</button>
       <button data-fond="osm">Fond OpenStreetMap</button>
-      <span class="legende"><span><i style="background:#0a5cff"></i>cœur marketing</span><span><i style="background:#ff6a00"></i>digital</span><span><i style="background:#8e8e93"></i>frontière</span></span>
     </div>
     <div id="map"></div>
     <p class="note" id="note-carte"></p></div>
   <div class="grille" style="margin-top:16px">
     <div class="carte"><h3>Par département <small>— les 15 premiers</small></h3><div class="zone"><canvas id="g-departements"></canvas></div></div>
     <div class="carte"><h3>Par type de contrat</h3><div class="zone"><canvas id="g-contrats"></canvas></div>
-      <p class="note">« Franchise », « Profession libérale » et « Profession commerciale » ne sont pas des emplois salariés : il s'agit de travailler à son compte. Le filtre « Indépendant », en haut, les regroupe.</p></div>
+      <p class="note">Les offres d'intérim (y compris CDI intérimaire) et les contrats indépendants sont exclus de cette étude.</p></div>
   </div>
 
   <!-- ============ 4. LE RESTE, PAGE PAR PAGE ============ -->
   <h2>Le reste, page par page <small>— vos filtres vous suivent</small></h2>
   <div class="liens">
-    <a class="lien" href="salaires.html"><b>Ce que ça paie</b><span><i id="cle-salaires">—</i> — fourchettes par niveau, par métier, par contrat, et Île-de-France ou ailleurs.</span></a>
+    <a class="lien" href="salaires.html"><b>Ce que ça paie</b><span><i id="cle-salaires">—</i> — fourchettes par niveau, par contrat, et selon le territoire.</span></a>
     <a class="lien" href="exigences.html"><b>Ce qu'on vous demande</b><span><i id="cle-exigences">—</i> — expérience, formation, outils et compétences cités dans les annonces.</span></a>
-    <a class="lien" href="recruteurs.html"><b>Qui recrute</b><span><i id="cle-recruteurs">—</i> — entreprises, secteurs, niveau de poste par métier, et les dernières offres.</span></a>
+    <a class="lien" href="recruteurs.html"><b>Qui recrute</b><span><i id="cle-recruteurs">—</i> — entreprises, secteurs, niveaux de poste et dernières offres.</span></a>
     <a class="lien" href="mouvement.html"><b>Le marché bouge</b><span><i id="cle-mouvement">—</i> — les extractions successives, la fraîcheur des annonces, et les limites de ces chiffres.</span></a>
   </div>
 
   <footer id="pied"></footer>
 </main>
 
-<script src="assets/commun.js?v=3"></script>
+<script src="assets/commun.js?v=6"></script>
 <script>
 /* ============ Accueil : chiffres, carte, départements, contrats ============ */
 let carte, calque;

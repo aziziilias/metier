@@ -15,13 +15,14 @@ C'est ici que la donnée brute est retravaillée :
     lisibles des codes de contrat (clé « contrats » du résumé).
   - exigences : exp_exige, exp_ans (années, 0 = débutant accepté), qualification, formation
     (niveau le plus élevé demandé), secteur, temps (plein/partiel), postes.
-La page recalcule ensuite tous les comptages côté navigateur, selon les métiers cochés.
+Les pages recalculent ensuite les comptages côté navigateur, selon les filtres de contrat et de niveau.
 """
 import csv
 import json
 import re
 import sys
 import time
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
@@ -100,6 +101,36 @@ NATURES = [
     ("non salarié", "non_salarie"),
     ("contrat travail", "salarie"),
 ]
+
+CONTRATS_INTERIM = {"MIS", "TTI", "DIN"}
+CONTRATS_INDEPENDANTS = {"FRA", "LIB", "CCE"}
+
+
+def contrat_exclu(o):
+    """Les offres d'intérim et indépendantes ne font pas partie de cette étude."""
+    nature_contrat = nature(o)
+    if o.get("alternance") or nature_contrat in {"apprentissage", "professionnalisation"}:
+        return False
+    return (o.get("typeContrat") in (CONTRATS_INTERIM | CONTRATS_INDEPENDANTS)
+            or nature_contrat == "non_salarie")
+
+
+def est_charge_marketing_digital(intitule):
+    """Ne garder que l'intitulé exact du poste, hors préfixes/suffixes usuels."""
+    titre = unicodedata.normalize("NFKD", intitule or "")
+    titre = "".join(c for c in titre if not unicodedata.combining(c)).lower()
+    titre = re.sub(r"\(e\)", "e", titre)
+    titre = re.sub(r"\bcharge\s*/\s*chargee\b", "chargee", titre)
+    titre = re.sub(r"^(?:alternance|alternant(?:e)?)\s*[-:]?\s+", "", titre)
+    titre = re.sub(r"\s*(?:\(\s*(?:h\s*/\s*f|f\s*/\s*h)\s*\)|\b(?:h\s*/\s*f|f\s*/\s*h))\s*$", "", titre)
+    titre = re.sub(r"\s+", " ", titre).strip()
+    return titre in {
+        "charge de marketing digital",
+        "chargee de marketing digital",
+        "charge marketing digital",
+        "chargee marketing digital",
+    }
+
 
 # Niveau de formation demandé : du plus faible au plus élevé (l'ordre sert aussi à l'affichage).
 FORMATIONS = ["< Bac", "Bac", "Bac+2", "Bac+3/4", "Bac+5"]
@@ -278,20 +309,27 @@ def main():
         raise SystemExit("Aucune extraction : lancez d'abord scripts/extraire.py")
     jour = jours[-1].stem
     with jours[-1].open(encoding="utf-8") as f:
-        actives = [(r["rome"], r["id"]) for r in csv.DictReader(f)]
+        actives = [(r["rome"], r["id"]) for r in csv.DictReader(f) if r["rome"] in METIERS]
     ids_actifs = {i for _, i in actives}
 
     # Dernière version connue de chaque offre active (les fichiers sont lus dans l'ordre des mois).
     versions = {}
+    versions_par_id = defaultdict(list)
+    nb_versions = 0
     for f in sorted((RACINE / "data" / "brut").glob("*/*.jsonl")):
         with f.open(encoding="utf-8") as fh:
             for ligne in fh:
                 if ligne.strip():
                     v = json.loads(ligne)
+                    if v.get("rome") not in METIERS:
+                        continue
+                    versions_par_id[v["id"]].append(v)
+                    offre_historique = v.get("offre") or {}
+                    if (not contrat_exclu(offre_historique)
+                            and est_charge_marketing_digital(offre_historique.get("intitule"))):
+                        nb_versions += 1
                     if v["id"] in ids_actifs:
                         versions[v["id"]] = v
-    nb_versions = sum(1 for f in (RACINE / "data" / "brut").glob("*/*.jsonl")
-                      for l in f.open(encoding="utf-8") if l.strip())
 
     geo = Geocodeur()
     offres = []
@@ -300,6 +338,8 @@ def main():
         if not v:
             continue
         o = v["offre"]
+        if contrat_exclu(o) or not est_charge_marketing_digital(o.get("intitule")):
+            continue
         lieu = o.get("lieuTravail") or {}
         texte = (o.get("intitule") or "") + " " + (o.get("description") or "")
         t = texte.lower()
@@ -338,14 +378,26 @@ def main():
 
     # Série : par jour et par métier
     serie = defaultdict(dict)
-    with (RACINE / "data" / "serie.csv").open(encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            serie[r["date"]][r["rome"]] = int(r["total"])
+    for fichier in sorted((RACINE / "data" / "actives").glob("*.csv")):
+        jour_serie = fichier.stem
+        total = 0
+        with fichier.open(encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["rome"] not in METIERS:
+                    continue
+                historique = versions_par_id.get(r["id"], [])
+                version = next((v for v in reversed(historique)
+                                if (v.get("vu_le") or "") <= jour_serie), None)
+                offre_historique = (version or {}).get("offre") or {}
+                if (version and not contrat_exclu(offre_historique)
+                        and est_charge_marketing_digital(offre_historique.get("intitule"))):
+                    total += 1
+        serie[jour_serie]["M1718"] = total
 
     resume = {
         "date": jour,
         "source": "France Travail — API Offres d'emploi v2",
-        "requete": "une requête codeROME par métier, France entière",
+        "requete": "codeROME = M1718, France entière",
         "metiers": [{"code": c, "libelle": l, "groupe": g, "coche": k,
                      "actives": sum(1 for o in offres if o["rome"] == c)}
                     for c, (l, g, k) in METIERS.items()],

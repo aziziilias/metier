@@ -66,8 +66,8 @@ const COUL_NIV = { assistant: "#a7c9ff", charge: "#5f9bf5", responsable: "#2a6ad
 const ENCRE_FONCEE = new Set(["assistant", "charge", "autre"]);
 const NIVEAUX_DEFAUT = [["assistant", "Assistant·e / junior"], ["charge", "Chargé·e"], ["responsable", "Responsable"], ["directeur", "Directeur·rice"], ["autre", "Autre"]];
 const FORMATIONS_DEFAUT = ["< Bac", "Bac", "Bac+2", "Bac+3/4", "Bac+5"];
-// Six familles de contrat, exclusives : une offre tombe dans une seule.
-const CONTRATS = [["cdi", "CDI"], ["cdd", "CDD"], ["alt", "Alternance"], ["mis", "Intérim"], ["indep", "Indépendant"], ["autre", "Autre"]];
+// Les offres d'intérim et indépendantes sont exclues des données en amont.
+const CONTRATS = [["cdi", "CDI"], ["cdd", "CDD"], ["alt", "Alternance"], ["autre", "Autre"]];
 const AURA = new Set(["01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"]);
 const IDF = new Set(["75", "77", "78", "91", "92", "93", "94", "95"]);
 const EXPS = ["Débutant accepté", "Moins d'un an", "1 à 2 ans", "3 à 4 ans", "5 ans et plus", "Non précisé"];
@@ -82,7 +82,7 @@ let NIVEAUX = NIVEAUX_DEFAUT, FORMATIONS = FORMATIONS_DEFAUT;
 function familleContrat(o) {
   const c = o.contrat || "", nat = o.nature || "";
   if (o.alternance || nat === "apprentissage" || nat === "professionnalisation") return "alt";
-  if (c === "MIS") return "mis";
+  if (c === "MIS" || c === "TTI" || c === "DIN") return "mis";
   if (c === "LIB" || c === "FRA" || c === "CCE" || nat === "non_salarie") return "indep";
   if (c === "CDI") return "cdi";
   if (c === "CDD") return "cdd";
@@ -229,13 +229,8 @@ const PAGE_ICI = (location.pathname.split("/").pop() || "index.html");
 const HTML_FILTRES = `
   <div class="filtres">
     <div>
-      <h3>Les métiers</h3>
+      <h3>Le métier</h3>
       <div class="metiers" id="metiers"></div>
-      <div class="boutons">
-        <button data-groupe="tous">Tout cocher</button>
-        <button data-groupe="aucun">Tout décocher</button>
-        <span class="groupes" id="groupes"></span>
-      </div>
     </div>
     <div>
       <h3>Type de contrat</h3>
@@ -260,7 +255,7 @@ function poserNavEtFiltres() {
     ? `<div class="carte">${HTML_FILTRES}</div>`
     // Ailleurs : replié, on vient lire une page, pas refaire ses filtres.
     : `<details class="carte"><summary id="resume-filtres">Filtres</summary>${HTML_FILTRES}</details>`)
-    + `<div class="vide" id="aucune" hidden>Aucune offre ne correspond à ces filtres. Recochez un métier, un type de contrat ou un niveau de poste.</div>`;
+    + `    <div class="vide" id="aucune" hidden>Aucune offre ne correspond à ces filtres. Vérifiez le type de contrat ou le niveau de poste.</div>`;
 
   const p = document.getElementById("pied");
   if (p) p.innerHTML =
@@ -311,7 +306,7 @@ const Commun = {
     Commun.rendre = rendre;
     poserNavEtFiltres();
     // GitHub Pages met le JSON en cache 10 minutes : on le redemande frais à chaque chargement.
-    fetch("data/resume.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+    fetch("data/resume.json?v=6", { cache: "no-cache" }).then(r => r.json()).then(d => {
       if (!d.metiers || !d.offres) throw new Error("ancien format de resume.json — rechargez la page (Ctrl+F5)");
       D = d;
       Commun.D = d;
@@ -328,30 +323,10 @@ const Commun = {
       if (!memo) { try { const vieux = JSON.parse(localStorage.getItem("metiers-coches")); if (Array.isArray(vieux)) memo = { metiers: vieux }; } catch (e) {} }
       const memoA = (cle, defaut) => (memo && Array.isArray(memo[cle])) ? memo[cle] : defaut;
 
-      // --- Filtre métiers, par groupe ---
+      // --- Métier étudié ---
       const groupes = [...new Set(d.metiers.map(m => m.groupe))];
-      const memoM = memo && Array.isArray(memo.metiers) ? memo.metiers : null;
-      document.getElementById("metiers").innerHTML = groupes.map(g => `<h4 style="color:${COULEURS[g] || ""}">${g}</h4>` +
-        d.metiers.filter(m => m.groupe === g).map(m =>
-          `<label><input type="checkbox" value="${m.code}" data-groupe="${m.groupe}" ${(memoM ? memoM.includes(m.code) : m.coche) ? "checked" : ""}> ${m.libelle} <small>${m.code} · ${m.actives}</small></label>`).join("")).join("");
-      // Une case par groupe : cocher/décocher le groupe entier, cumulables ; état intermédiaire si le groupe est partiel.
-      document.getElementById("groupes").innerHTML = groupes.map(g =>
-        `<label style="color:${COULEURS[g] || ""}"><input type="checkbox" data-groupe-case="${g}"> ${g}</label>`).join("");
-      const majGroupes = () => document.querySelectorAll("[data-groupe-case]").forEach(c => {
-        const cases = [...document.querySelectorAll(`#metiers input[data-groupe="${c.dataset.groupeCase}"]`)];
-        const k = cases.filter(i => i.checked).length;
-        c.checked = cases.length > 0 && k === cases.length; c.indeterminate = k > 0 && k < cases.length;
-      });
-      document.querySelectorAll("[data-groupe-case]").forEach(c => c.addEventListener("change", () => {
-        document.querySelectorAll(`#metiers input[data-groupe="${c.dataset.groupeCase}"]`).forEach(i => { i.checked = c.checked; });
-        majGroupes(); Commun.rafraichir();
-      }));
-      document.getElementById("metiers").addEventListener("change", () => { majGroupes(); Commun.rafraichir(); });
-      document.querySelectorAll(".boutons button").forEach(b => b.addEventListener("click", () => {
-        document.querySelectorAll("#metiers input").forEach(i => { i.checked = b.dataset.groupe === "tous"; });
-        majGroupes(); Commun.rafraichir();
-      }));
-      majGroupes();
+      document.getElementById("metiers").innerHTML = d.metiers.map(m =>
+        `<label><input type="checkbox" value="${m.code}" checked disabled> ${m.libelle} <small>${m.code} · ${m.actives}</small></label>`).join("");
 
       // --- Filtre type de contrat ---
       const memoC = memoA("contrats", CONTRATS.map(x => x[0]));

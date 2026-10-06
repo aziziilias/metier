@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ce qu'on vous demande — les métiers du marketing</title>
+<title>Ce qu'on vous demande — chargé de marketing digital</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="assets/commun.css?v=3">
 </head>
@@ -27,7 +27,7 @@
   <footer id="pied"></footer>
 </main>
 
-<script src="assets/commun.js?v=3"></script>
+<script src="assets/commun.js?v=6"></script>
 <script>
 /* ============ Ce qu'on vous demande ============ */
 function rendre(offres, D) {
@@ -68,14 +68,13 @@ function rendre(offres, D) {
                  tooltip: { callbacks: { label: c => `${c.dataset.label} : ${c.parsed.x} % des offres de ce niveau` } } },
       scales: { x: { beginAtZero: true, ticks: { callback: v => v + " %" } }, y: { grid: { display: true } } } });
 
-  /* Un employeur qui publie des centaines d'annonces quasi identiques (réseau de franchise,
-     agence d'intérim) déforme tous les graphiques par niveau. On le dit, avec son nom et son
-     poids réel, plutôt que de laisser lire une tendance du marché là où il n'y en a pas. */
+  /* Un employeur qui publie des annonces quasi identiques peut déformer les graphiques ;
+     on indique son poids réel plutôt que de laisser lire une tendance trompeuse. */
   // Seuil double : au moins 20 annonces ET 5 % de la sélection. Sinon, sur une sélection
   // étroite, on désignerait un employeur qui a simplement publié six offres.
   const gros = compter(offres, o => o.entreprise)[0];
   document.getElementById("note-outils").textContent = (gros && gros[1] >= 20 && gros[1] >= n * 0.05)
-    ? `Un outil cité n'est pas un outil exigé — et attention : ${gros[0]} publie à elle seule ${gros[1]} des ${n} annonces de cette sélection (${pct(gros[1], n)} %), souvent le même texte répété. Décochez « Indépendant » ou « Intérim » dans les filtres pour voir ce que ça change.`
+    ? `Un outil cité n'est pas un outil exigé — et attention : ${gros[0]} publie à elle seule ${gros[1]} des ${n} annonces de cette sélection (${pct(gros[1], n)} %), souvent le même texte répété.`
     : "Lecture : part des offres de chaque niveau qui citent l'outil. Un outil cité n'est pas un outil exigé — il faut lire l'annonce.";
 
   const comp = compter(offres.flatMap(o => o.competences || []), x => x).slice(0, 12);
