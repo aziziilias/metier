@@ -1,31 +1,36 @@
-# Le marché de mon métier — les métiers du marketing
+# Le marché du chargé de marketing digital
 
-### 👉 **[Voir le site : vincentfavarin.github.io/metier](https://vincentfavarin.github.io/metier/)**
+### 👉 **[Voir le site : aziziilias.github.io/metier](https://aziziilias.github.io/metier/)**
 
 Le site est mis à jour chaque matin par une Action GitHub : elle interroge
 l'API France Travail, enregistre les offres du jour et publie les chiffres.
+Il suit un seul métier : **chargé / chargée de marketing digital**, code ROME
+**M1718**. Les offres d'intérim (y compris CDI intérimaire) et les contrats
+indépendants sont exclus des pages et des statistiques.
 
 | | |
 |---|---|
-| [Accueil](https://vincentfavarin.github.io/metier/) | les filtres, les chiffres, la carte de France |
-| [Ce que ça paie](https://vincentfavarin.github.io/metier/salaires.html) | fourchettes par niveau, métier, contrat, territoire |
-| [Ce qu'on vous demande](https://vincentfavarin.github.io/metier/exigences.html) | expérience, diplôme, outils, compétences |
-| [Qui recrute](https://vincentfavarin.github.io/metier/recruteurs.html) | entreprises, secteurs, employeurs ouverts aux débutants |
-| [Le marché bouge](https://vincentfavarin.github.io/metier/mouvement.html) | les extractions successives, la fraîcheur des annonces |
+| [Accueil](https://aziziilias.github.io/metier/) | les filtres, les chiffres, la carte de France |
+| [Ce que ça paie](https://aziziilias.github.io/metier/salaires.html) | fourchettes par niveau, contrat et territoire |
+| [Ce qu'on vous demande](https://aziziilias.github.io/metier/exigences.html) | expérience, diplôme, outils, compétences |
+| [Qui recrute](https://aziziilias.github.io/metier/recruteurs.html) | entreprises, secteurs, employeurs ouverts aux débutants |
+| [Le marché bouge](https://aziziilias.github.io/metier/mouvement.html) | les extractions successives, la fraîcheur des annonces |
 
 Dossier de travail pour la séance « Écouter le marché de votre métier »
 (M2 MOD, IAE Clermont Auvergne). Dépôt de démonstration : il montre ce que
 l'on attend d'un dossier `avenir`, étape par étape, et la chaîne complète
 API → données → Action planifiée → page GitHub Pages.
 
-## Le métier, tel que le marché le nomme
+## Le métier suivi
 
-- **Intitulé principal** : chargé / chargée de marketing digital
-- **Variantes rencontrées dans les offres** : chef de projet marketing digital,
-  chef de produit digital, traffic manager, CRM manager, chargé d'acquisition
-- **Code ROME** : **M1718** — Chargé / Chargée de marketing digital
-  (le README disait M1705 « Marketing » ; c'est la première extraction qui a
-  donné le bon code : 14 offres sur 22 étaient en M1718)
+- **Intitulé** : chargé / chargée de marketing digital
+- **Code ROME** : **M1718**
+- Les intitulés des annonces peuvent varier ; la collecte s'appuie sur ce code
+  ROME pour ne pas mélanger des métiers voisins.
+- Les anciennes archives de collecte sont conservées, mais les pages et leur
+  résumé ne retiennent que M1718.
+- Les séries quotidiennes sont recalculées depuis les offres réellement actives
+  chaque jour, en excluant ces types de contrat.
 
 ## Les questions que je pose à ce marché
 
@@ -36,57 +41,32 @@ API → données → Action planifiée → page GitHub Pages.
    ne me donnera pas ?
 4. Quelles entreprises publient le plus cet intitulé ?
 
-## Ce que la première journée a appris (22/09/2026)
-
-Trois requêtes, même jour, même API :
-
-| Requête | Offres | Lecture |
-|---|---|---|
-| `motsCles = "chef de projet marketing digital"` | 22 | trop étroit, et du bruit (PMO, communication) |
-| `codeROME = M1718` | 113 | le référentiel : homogène, c'est la requête de la veille |
-| `motsCles = "marketing digital"` | 424 | large, mais 191 annonces identiques d'un même réseau (M1716) : à dédoublonner avant de compter |
-
-Sur M1718 : 0 offre dans le 63, 11 en Auvergne-Rhône-Alpes, Paris et
-Hauts-de-Seine en tête ; 27 % des offres affichent un salaire, médiane
-31 000 → 35 700 € annuels ; réseaux sociaux, anglais, SEO/SEA, GA4 et
-« IA » reviennent le plus.
-
-## Les métiers suivis
-
-23 codes ROME, choisis pour le M2 MOD parmi les 1 911 du référentiel France
-Travail (la liste vit dans `scripts/extraire.py`, `METIERS`) : le cœur
-marketing (M1718 chargé de marketing digital, M1716, M1705, M1703, M1620,
-M1706, M1430, M1711), le digital (E1113 e-commerce, D1438, E1101 community
-manager, E1124, E1405 SEO, M1886, M1426, M1719 et E1406 influence — 0 offre
-aujourd'hui, on surveille) et, décochés par défaut, la frontière avec la
-communication et le commerce (E1112, E1103, E1107, E1404, D1506, D1415 CRM).
-Au 22/09/2026 : 3 362 offres actives.
-
 ## La chaîne
 
 ```
 API France Travail  →  scripts/extraire.py  →  data/brut/<mois>/<ROME>.jsonl   chaque version d'annonce, une seule fois
                                             →  data/actives/<date>.csv         les offres actives du jour (rome, id)
-                                            →  data/serie.csv                  par jour et par métier : total, nouvelles, modifiées
+                                            →  data/serie.csv                  par jour pour M1718 : total, nouvelles, modifiées
                        scripts/resumer.py   →  data/resume.json                ce que les pages affichent (+ data/geo/, cache des positions)
-                       index.html + 4 pages →  https://vincentfavarin.github.io/metier/
+                       index.html + 4 pages →  https://aziziilias.github.io/metier/
                        .github/workflows/veille.yml : GitHub relance tout ça chaque jour
 ```
 
-- `scripts/extraire.py` — une requête `codeROME` par métier (token OAuth,
+- `scripts/extraire.py` — une requête `codeROME` pour M1718 (token OAuth,
   pagination 150 / 1 150, total lu dans `Content-Range`). Le **brut est
   conservé intégralement** : une offre est écrite la première fois qu'on la
   voit, et de nouveau si son contenu change (empreinte SHA-1 du JSON, hors
   `dateActualisation`) — l'évolution d'une annonce est donc gardée, version
   par version. Relancer le même jour n'écrit rien deux fois.
-- `scripts/resumer.py` — retravaille le brut des offres actives : salaires
+- `scripts/resumer.py` — ne garde que les offres actives M1718, puis retravaille
+  le brut : salaires
   (libellé texte → min/max annuels bruts), outils cités dans les descriptions
   (grille à adapter), position (lat/lon de l'API, sinon centre de la commune
   via geo.api.gouv.fr, sinon ville principale du département).
-- Cinq pages HTML statiques, un chantier par page, toutes servies telles quelles.
+- Cinq pages HTML statiques, toutes servies telles quelles.
   Chacune charge `data/resume.json` et recalcule ses graphiques Chart.js dans le
-  navigateur selon la sélection ; net mensuel estimé = brut × 0,78 / 12.
-  - `index.html` — les filtres, les chiffres-clés, la carte Leaflet (survol =
+  navigateur selon les filtres de contrat et de niveau ; net mensuel estimé = brut × 0,78 / 12.
+  - `index.html` — les filtres de contrat et de niveau, les chiffres-clés, la carte Leaflet (survol =
     l'offre, clic = l'annonce sur France Travail), les départements, les
     contrats, et les liens vers les quatre autres pages.
   - `salaires.html` — ce que ça paie. `exigences.html` — ce qu'on vous demande.

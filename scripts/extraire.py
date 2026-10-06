@@ -33,35 +33,9 @@ from dotenv import load_dotenv
 RACINE = Path(__file__).resolve().parent.parent
 load_dotenv(RACINE / ".env")
 
-# Les métiers suivis : code ROME -> (libellé, groupe, coché par défaut sur la page).
-# Choisis pour le M2 Marketing Opérationnel et Digital ; la page permet de cocher/décocher.
+# Le métier suivi : code ROME -> (libellé, groupe, coché par défaut sur la page).
 METIERS = {
-    # Cœur marketing
     "M1718": ("Chargé(e) de marketing digital", "Marketing", True),
-    "M1716": ("Directeur(trice) marketing digital", "Marketing", True),
-    "M1705": ("Responsable marketing", "Marketing", True),
-    "M1703": ("Chef(fe) de produit", "Marketing", True),
-    "M1620": ("Assistant(e) marketing", "Marketing", True),
-    "M1706": ("Chef(fe) de promotion des ventes", "Marketing", True),
-    "M1430": ("Chargé(e) d'études commerciales", "Marketing", True),
-    "M1711": ("Directeur(trice) du marketing", "Marketing", True),
-    # Digital, contenu, e-commerce
-    "E1113": ("Responsable e-commerce", "Digital", True),
-    "D1438": ("Assistant(e) e-commerce", "Digital", True),
-    "E1101": ("Community manager", "Digital", True),
-    "E1124": ("Social media manager", "Digital", True),
-    "E1405": ("Référenceur(se) web (SEO)", "Digital", True),
-    "M1886": ("Chef(fe) de projet web", "Digital", True),
-    "M1426": ("Chief digital officer", "Digital", True),
-    "M1719": ("Chargé(e) des relations avec les influenceurs", "Digital", True),
-    "E1406": ("Influenceur(se) web", "Digital", True),
-    # Communication et commerce, à la frontière
-    "E1112": ("Chargé(e) de communication", "Frontière", False),
-    "E1103": ("Chargé(e) des relations publiques", "Frontière", False),
-    "E1107": ("Chef(fe) de projet événementiel", "Frontière", False),
-    "E1404": ("Assistant(e) en publicité", "Frontière", False),
-    "D1506": ("Chargé(e) de merchandising", "Frontière", False),
-    "D1415": ("Chargé(e) de relation client (CRM)", "Frontière", False),
 }
 
 TOKEN_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire"
@@ -169,11 +143,12 @@ def main():
         print(f"{code}  {METIERS[code][0]:<48} {len(offres):5d} offres, {nouvelles:4d} nouvelles, {modifiees:3d} modifiées")
         time.sleep(0.5)
 
-    # Même logique pour les actives du jour : on remplace les codes relancés, on garde les autres.
+    # On remplace les codes relancés et ne conserve que les métiers encore suivis.
     fichier_actives = RACINE / "data" / "actives" / f"{aujourdhui}.csv"
     if fichier_actives.exists():
         with fichier_actives.open(encoding="utf-8") as f:
-            actives = [tuple(r) for r in list(csv.reader(f))[1:] if r[0] not in codes] + actives
+            actives = [tuple(r) for r in list(csv.reader(f))[1:]
+                       if r[0] in METIERS and r[0] not in codes] + actives
     with fichier_actives.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["rome", "id", "date_actualisation"])
@@ -183,7 +158,7 @@ def main():
     lignes = []
     if serie.exists():
         with serie.open(encoding="utf-8") as f:
-            lignes = [r for r in csv.reader(f)][1:]
+            lignes = [r for r in list(csv.reader(f))[1:] if r[1] in METIERS]
     # Si on relance le même jour, la ligne du jour est remplacée, pas doublée.
     lignes = [r for r in lignes if not (r[0] == aujourdhui and r[1] in codes)] + lignes_serie
     with serie.open("w", newline="", encoding="utf-8") as f:
@@ -191,7 +166,7 @@ def main():
         w.writerow(["date", "rome", "total", "recuperees", "nouvelles", "modifiees"])
         w.writerows(sorted(lignes))
 
-    print(f"\n{aujourdhui} : {len(actives)} offres actives sur {len(codes)} métiers — "
+    print(f"\n{aujourdhui} : {len(actives)} offres actives sur {len(codes)} métier(s) — "
           f"{sum(r[4] for r in lignes_serie)} nouvelles versions, {sum(r[5] for r in lignes_serie)} modifiées.")
 
 
