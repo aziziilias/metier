@@ -229,7 +229,7 @@ const PAGE_ICI = (location.pathname.split("/").pop() || "index.html");
 const HTML_FILTRES = `
   <div class="filtres">
     <div>
-      <h3>Métier étudié</h3>
+      <h3>Le métier</h3>
       <div class="metiers" id="metiers"></div>
     </div>
     <div>
@@ -306,7 +306,7 @@ const Commun = {
     Commun.rendre = rendre;
     poserNavEtFiltres();
     // GitHub Pages met le JSON en cache 10 minutes : on le redemande frais à chaque chargement.
-    fetch("data/resume.json?v=5", { cache: "no-cache" }).then(r => r.json()).then(d => {
+    fetch("data/resume.json?v=6", { cache: "no-cache" }).then(r => r.json()).then(d => {
       if (!d.metiers || !d.offres) throw new Error("ancien format de resume.json — rechargez la page (Ctrl+F5)");
       D = d;
       Commun.D = d;
@@ -325,9 +325,8 @@ const Commun = {
 
       // --- Métier étudié ---
       const groupes = [...new Set(d.metiers.map(m => m.groupe))];
-      document.getElementById("metiers").innerHTML = groupes.map(g => `<h4 style="color:${COULEURS[g] || ""}">${g}</h4>` +
-        d.metiers.filter(m => m.groupe === g).map(m =>
-          `<label><input type="checkbox" value="${m.code}" checked disabled> ${m.libelle} <small>${m.code} · ${m.actives}</small></label>`).join("")).join("");
+      document.getElementById("metiers").innerHTML = d.metiers.map(m =>
+        `<label><input type="checkbox" value="${m.code}" checked disabled> ${m.libelle} <small>${m.code} · ${m.actives}</small></label>`).join("");
 
       // --- Filtre type de contrat ---
       const memoC = memoA("contrats", CONTRATS.map(x => x[0]));

@@ -22,6 +22,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
@@ -112,6 +113,23 @@ def contrat_exclu(o):
         return False
     return (o.get("typeContrat") in (CONTRATS_INTERIM | CONTRATS_INDEPENDANTS)
             or nature_contrat == "non_salarie")
+
+
+def est_charge_marketing_digital(intitule):
+    """Ne garder que l'intitulé exact du poste, hors préfixes/suffixes usuels."""
+    titre = unicodedata.normalize("NFKD", intitule or "")
+    titre = "".join(c for c in titre if not unicodedata.combining(c)).lower()
+    titre = re.sub(r"\(e\)", "e", titre)
+    titre = re.sub(r"\bcharge\s*/\s*chargee\b", "chargee", titre)
+    titre = re.sub(r"^(?:alternance|alternant(?:e)?)\s*[-:]?\s+", "", titre)
+    titre = re.sub(r"\s*(?:\(\s*(?:h\s*/\s*f|f\s*/\s*h)\s*\)|\b(?:h\s*/\s*f|f\s*/\s*h))\s*$", "", titre)
+    titre = re.sub(r"\s+", " ", titre).strip()
+    return titre in {
+        "charge de marketing digital",
+        "chargee de marketing digital",
+        "charge marketing digital",
+        "chargee marketing digital",
+    }
 
 
 # Niveau de formation demandé : du plus faible au plus élevé (l'ordre sert aussi à l'affichage).
@@ -306,7 +324,9 @@ def main():
                     if v.get("rome") not in METIERS:
                         continue
                     versions_par_id[v["id"]].append(v)
-                    if not contrat_exclu(v.get("offre") or {}):
+                    offre_historique = v.get("offre") or {}
+                    if (not contrat_exclu(offre_historique)
+                            and est_charge_marketing_digital(offre_historique.get("intitule"))):
                         nb_versions += 1
                     if v["id"] in ids_actifs:
                         versions[v["id"]] = v
@@ -318,7 +338,7 @@ def main():
         if not v:
             continue
         o = v["offre"]
-        if contrat_exclu(o):
+        if contrat_exclu(o) or not est_charge_marketing_digital(o.get("intitule")):
             continue
         lieu = o.get("lieuTravail") or {}
         texte = (o.get("intitule") or "") + " " + (o.get("description") or "")
@@ -368,7 +388,9 @@ def main():
                 historique = versions_par_id.get(r["id"], [])
                 version = next((v for v in reversed(historique)
                                 if (v.get("vu_le") or "") <= jour_serie), None)
-                if version and not contrat_exclu(version.get("offre") or {}):
+                offre_historique = (version or {}).get("offre") or {}
+                if (version and not contrat_exclu(offre_historique)
+                        and est_charge_marketing_digital(offre_historique.get("intitule"))):
                     total += 1
         serie[jour_serie]["M1718"] = total
 

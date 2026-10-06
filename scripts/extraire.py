@@ -35,7 +35,7 @@ load_dotenv(RACINE / ".env")
 
 # Le métier suivi : code ROME -> (libellé, groupe, coché par défaut sur la page).
 METIERS = {
-    "M1718": ("Chargé(e) de marketing digital", "Marketing", True),
+    "M1718": ("Chargé de marketing digital", "Marketing", True),
 }
 
 TOKEN_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire"
